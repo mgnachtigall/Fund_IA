@@ -1,47 +1,48 @@
-fin = File.open(ARGV[0],"r")
-outdir = ARGV[0].split(".").at(0) + "_results"
-puts %x[#{"mkdir "+outdir}]
-fpout = File.open("./"+outdir+"/path_Hill_Climb.txt","w")
-best_value = File.open(ARGV[0].split(".").at(0) + ".best","r").read.to_i
+fin = File.open(ARGV[0],"r").read.split("\n")
+outdir = ARGV[0].split(".").at(0)
+system("mkdir "+outdir)
+
+outfile = outdir+"_hillClimb.txt"
+fpout = File.open(outfile,"w")
+
+$max_iterations = 150000
+# best_value = File.open(outdir+".best","r").read.to_i
 
 
 require 'Array'
 require 'rubygems'
 require 'algorithms'
-$print = 0
+# fin = File.readlines("tsp225.tsp").collect {|line| line.chomp}
+ # index = fin.index(fin.select {|line| line[/NODE_COORD_SECTION/] }.to_s)
 
 
+mh = Containers::MinHeap.new #Heap with mimimun state and values
 
-mh = Containers::MinHeap.new #Heap que armazena os estados com a heurística
+#Finds the line with the word "DIMENSION" and delete everything other than the int value
+$numCities = fin.select {|line| line[/DIMENSION/] }.to_s.delete("DIMENSION : ").to_i
 
-lines = fin.read.split("\n")
-$numCities = lines[0].split(",").size
+#Gets index for the coordinate section
+index = (fin.index(fin.select {|line| line[/NODE_COORD_SECTION/] }.to_s))+1
 
+$coord = Array.new #Array with city coordenates
 
-$costs = Array.new # Matriz de custos
-for j in 0...lines.length
-  $costs.push(lines[j].split(",").collect{|i| i.to_i})  #converte o array de str para int
+for i in index...fin.size-1
+	temp = fin[index].split(" ").collect {|value| value.to_f}
+	$coord([temp[1],temp[2]])
 end
 
-for iteration in 0...30 
+
+# for iteration in 0...30 #Repeat <n> times for statistical tests
 	total = Time.now
 
-	lista = (0...$numCities).to_a #Cria uma lista com as cidades
-	lista.shuffle!				#aleatoriza o estado inicial
+	lista = (0...$numCities).to_a #Create a list with all the cities
+	lista.shuffle!				#randomize 1st state
 
-
-	if $print == 1
-		puts %x[#{"clear"}]
-		p lista
-		print "h: ",lista.heuristica,"\n\n"
-	end
-
-	$max_iterations = 150000
-	# lista.to_file(fpout,lista.heuristica)
+	
 
 	best = Hash.new
 	best[:route] = lista
-	best[:cost] = lista.heuristica
+	best[:cost] = lista.fitness
 
 	candidate = Hash.new
 
@@ -56,14 +57,14 @@ for iteration in 0...30
 				i = $max_iterations # termina a iteração
 			end
 		end
-		if i%10000 == 0
-			puts "i#{iteration}: #{i} > #{best[:cost]}"
-		end
+		# if i%10000 == 0
+		# 	puts "i#{iteration}: #{i} > #{best[:cost]}"
+		# end
 		mh.clear
 		i+=1
 	end
 
-	puts "Tempo: #{(Time.now - total)} best=#{best[:cost]} i: #{i}"
+	puts "Time: #{(Time.now - total)} best=#{best[:cost]} i: #{i}"
 	best[:route].to_file(fpout,best[:cost])
 	fpout.print("\n")
-end
+# end
